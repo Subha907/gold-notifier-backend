@@ -30,3 +30,14 @@ export async function getLast5() {
     .get();
   return snapshot.docs.map((d) => d.data());
 }
+
+export async function saveToken(token) {
+  const db = getDb();
+  await db.collection("config").doc("fcmToken").set({ token });
+}
+
+export async function getToken() {
+  const db = getDb();
+  const doc = await db.collection("config").doc("fcmToken").get();
+  return doc.exists ? doc.data().token : null;
+}

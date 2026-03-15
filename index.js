@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import cron from "node-cron";
 import { scrapeTodayPrice } from "./scraper.js";
-import { addTodayPrice, getLast5 } from "./history.js";
+import { addTodayPrice, getLast5, saveToken, getToken } from "./history.js";
 import { checkAndNotify } from "./notify.js";
 import "dotenv/config";
 
@@ -11,6 +11,13 @@ app.use(cors());
 app.use(express.json());
 
 let fcmToken = process.env.FCM_TOKEN || "";
+
+async function loadToken() {
+  const saved = await getToken();
+  if (saved) { fcmToken = saved; console.log("FCM token loaded from Firestore"); }
+}
+
+loadToken();
 
 async function fetchAndStore() {
   try {
@@ -32,9 +39,13 @@ app.get("/api/prices", async (req, res) => {
   res.json(await getLast5());
 });
 
-app.post("/api/token", (req, res) => {
+app.post("/api/token", async (req, res) => {
   const { token } = req.body;
-  if (token) { fcmToken = token; console.log("FCM token saved"); }
+  if (token) {
+    fcmToken = token;
+    await saveToken(token);
+    console.log("FCM token saved to Firestore");
+  }
   res.json({ success: true });
 });
 
