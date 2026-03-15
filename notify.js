@@ -1,20 +1,6 @@
 import admin from "firebase-admin";
-import { existsSync, readFileSync } from "fs";
-
-let initialized = false;
-
-function initFirebase() {
-  if (initialized) return;
-  // Use env var on cloud (Render), fallback to file for local dev
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : JSON.parse(readFileSync("./serviceAccountKey.json", "utf8"));
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  initialized = true;
-}
 
 export async function sendNotification(token, title, body) {
-  initFirebase();
   await admin.messaging().send({ token, notification: { title, body } });
 }
 

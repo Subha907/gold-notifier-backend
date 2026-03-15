@@ -1,30 +1,32 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import admin from "firebase-admin";
+import { existsSync, readFileSync } from "fs";
 
-const FILE = "./priceHistory.json";
+let initialized = false;
 
-function load() {
-  if (!existsSync(FILE)) return [];
-  return JSON.parse(readFileSync(FILE, "utf8"));
-}
-
-function save(history) {
-  writeFileSync(FILE, JSON.stringify(history, null, 2));
-}
-
-export function addTodayPrice(entry) {
-  const history = load();
-  // Avoid duplicate for same date
-  const exists = history.find((p) => p.date === entry.date);
-  if (!exists) {
-    history.unshift(entry); // newest first
-    save(history);
+function getDb() {
+  if (!initialized) {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : JSON.parse(readFileSync("./serviceAccountKey.json", "utf8"));
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    initialized = true;
   }
-  return getLast5(history);
+  return admin.firestore();
 }
 
-export function getLast5(history = null) {
-  const data = history || load();
-  return data
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+export async function addTodayPrice(entry) {
+  const db = getDb();
+  const ref = db.collection("prices").doc(entry.date);
+  const doc = await ref.get();
+  if (!doc.exists) await ref.set(entry);
+  return getLast5();
+}
+
+export async function getLast5() {
+  const db = getDb();
+  const snapshot = await db.collection("prices")
+    .orderBy("date", "desc")
+    .limit(5)
+    .get();
+  return snapshot.docs.map((d) => d.data());
 }

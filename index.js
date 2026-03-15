@@ -15,7 +15,7 @@ let fcmToken = process.env.FCM_TOKEN || "";
 async function fetchAndStore() {
   try {
     const today = await scrapeTodayPrice();
-    const history = addTodayPrice(today);
+    const history = await addTodayPrice(today);
     console.log("Price updated:", today.date, "| 10g: ₹" + today.price10g.toLocaleString("en-IN"));
     await checkAndNotify(history, fcmToken);
   } catch (err) {
@@ -28,8 +28,8 @@ fetchAndStore();
 // Every day at 9 AM IST (3:30 AM UTC)
 cron.schedule("30 3 * * *", fetchAndStore);
 
-app.get("/api/prices", (req, res) => {
-  res.json(getLast5());
+app.get("/api/prices", async (req, res) => {
+  res.json(await getLast5());
 });
 
 app.post("/api/token", (req, res) => {
@@ -40,7 +40,7 @@ app.post("/api/token", (req, res) => {
 
 app.get("/api/refresh", async (req, res) => {
   await fetchAndStore();
-  res.json(getLast5());
+  res.json(await getLast5());
 });
 
 const PORT = process.env.PORT || 5000;
