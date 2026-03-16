@@ -35,6 +35,12 @@ fetchAndStore();
 // Every day at 9 AM IST (3:30 AM UTC)
 cron.schedule("30 3 * * *", fetchAndStore);
 
+// Keep Render free tier awake — ping every 14 mins
+cron.schedule("*/14 * * * *", () => {
+  const url = process.env.RENDER_URL;
+  if (url) fetch(url).catch(() => {});
+});
+
 app.get("/api/prices", async (req, res) => {
   res.json(await getLast5());
 });

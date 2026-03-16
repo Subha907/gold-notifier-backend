@@ -11,13 +11,20 @@ export async function checkAndNotify(prices, token) {
   const yesterday = prices[1];
   const change = ((today.price10g - yesterday.price10g) / yesterday.price10g) * 100;
 
+  // Always send daily morning update
+  await sendNotification(
+    token,
+    "🪙 Daily Gold Price Update",
+    `24K Gold in Kolkata — 10g: ₹${today.price10g.toLocaleString("en-IN")} | 5g: ₹${today.price5g.toLocaleString("en-IN")}`
+  );
+
   // Significant change alert (±1.5%)
   if (Math.abs(change) >= 1.5) {
     const direction = change > 0 ? "📈 UP" : "📉 DOWN";
     await sendNotification(
       token,
       `Gold Price Alert ${direction}`,
-      `24K Gold in Kolkata is ${direction} by ${Math.abs(change).toFixed(2)}%. Today: ₹${today.price10g.toLocaleString("en-IN")}/10g`
+      `24K Gold is ${direction} by ${Math.abs(change).toFixed(2)}% vs yesterday. Today: ₹${today.price10g.toLocaleString("en-IN")}/10g`
     );
   }
 
