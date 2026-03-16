@@ -30,7 +30,18 @@ async function fetchAndStore() {
   }
 }
 
-fetchAndStore();
+// On startup — only fetch and store price, no notification
+async function fetchAndStoreQuiet() {
+  try {
+    const today = await scrapeTodayPrice();
+    await addTodayPrice(today);
+    console.log("Startup price updated:", today.date, "| 10g: ₹" + today.price10g.toLocaleString("en-IN"));
+  } catch (err) {
+    console.error("Scrape failed:", err.message);
+  }
+}
+
+fetchAndStoreQuiet();
 
 // Every day at 9 AM IST (3:30 AM UTC)
 cron.schedule("30 3 * * *", fetchAndStore);
