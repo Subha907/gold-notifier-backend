@@ -41,3 +41,19 @@ export async function getToken() {
   const doc = await db.collection("config").doc("fcmToken").get();
   return doc.exists ? doc.data().token : null;
 }
+
+export async function savePendingNotifications(notifications) {
+  const db = getDb();
+  await db.collection("config").doc("pendingNotifications").set({ notifications, updatedAt: new Date().toISOString() });
+}
+
+export async function getPendingNotifications() {
+  const db = getDb();
+  const doc = await db.collection("config").doc("pendingNotifications").get();
+  return doc.exists ? doc.data().notifications : [];
+}
+
+export async function clearPendingNotifications() {
+  const db = getDb();
+  await db.collection("config").doc("pendingNotifications").set({ notifications: [], updatedAt: new Date().toISOString() });
+}

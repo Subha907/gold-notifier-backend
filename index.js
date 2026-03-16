@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import cron from "node-cron";
 import { scrapeTodayPrice } from "./scraper.js";
-import { addTodayPrice, getLast5, saveToken, getToken } from "./history.js";
+import { addTodayPrice, getLast5, saveToken, getToken, getPendingNotifications, clearPendingNotifications } from "./history.js";
 import { checkAndNotify } from "./notify.js";
 import "dotenv/config";
 
@@ -64,6 +64,12 @@ app.post("/api/token", async (req, res) => {
     console.log("FCM token saved to Firestore");
   }
   res.json({ success: true });
+});
+
+app.get("/api/notifications", async (req, res) => {
+  const notifications = await getPendingNotifications();
+  await clearPendingNotifications();
+  res.json(notifications);
 });
 
 app.get("/api/refresh", async (req, res) => {
