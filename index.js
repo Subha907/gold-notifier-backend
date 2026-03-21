@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cron from "node-cron";
+import axios from "axios";
 import { scrapeTodayPrice } from "./scraper.js";
 import { addTodayPrice, getLast5, saveToken, getToken, getPendingNotifications, clearPendingNotifications } from "./history.js";
 import { checkAndNotify } from "./notify.js";
@@ -43,8 +44,8 @@ async function fetchAndStoreQuiet() {
 
 fetchAndStoreQuiet();
 
-// Every day at 9 AM IST (3:30 AM UTC)
-cron.schedule("30 3 * * *", fetchAndStore);
+// Every day at 10 AM IST (4:30 AM UTC)
+cron.schedule("30 4 * * *", fetchAndStore);
 
 // TEST: one-time notification at 1:25 AM IST (7:55 PM UTC)
 cron.schedule("55 19 * * *", async () => {
@@ -53,9 +54,18 @@ cron.schedule("55 19 * * *", async () => {
 }, { scheduled: true, timezone: "UTC" });
 
 // Keep Render free tier awake — ping every 14 mins
-cron.schedule("*/14 * * * *", () => {
+cron.schedule("*/14 * * * *", async () => {
   const url = process.env.RENDER_URL;
-  if (url) fetch(url).catch(() => {});
+  if (url) {
+    try {
+      await axios.get(url);
+      console.log("Keep-alive ping sent:", new Date().toISOString());
+    } catch (err) {
+      console.warn("Keep-alive ping failed:", err.message);
+    }
+  } else {
+    console.warn("RENDER_URL not set, keep-alive skipped");
+  }
 });
 
 // Manual test notification endpoint
