@@ -46,10 +46,29 @@ fetchAndStoreQuiet();
 // Every day at 9 AM IST (3:30 AM UTC)
 cron.schedule("30 3 * * *", fetchAndStore);
 
+// TEST: one-time notification at 1:25 AM IST (7:55 PM UTC)
+cron.schedule("55 19 * * *", async () => {
+  console.log("Test notification firing...");
+  await fetchAndStore();
+}, { scheduled: true, timezone: "UTC" });
+
 // Keep Render free tier awake — ping every 14 mins
 cron.schedule("*/14 * * * *", () => {
   const url = process.env.RENDER_URL;
   if (url) fetch(url).catch(() => {});
+});
+
+// Manual test notification endpoint
+app.get("/api/test-notify", async (req, res) => {
+  try {
+    await loadToken();
+    if (!fcmToken) return res.json({ success: false, message: "No FCM token found" });
+    const { sendNotification } = await import("./notify.js");
+    await sendNotification(fcmToken, "🧪 Test Notification", `Gold app is working! Time: ${new Date().toLocaleTimeString("en-IN")}`);
+    res.json({ success: true, message: "Test notification sent!" });
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
 });
 
 app.get("/api/prices", async (req, res) => {
